@@ -1,0 +1,11 @@
+name: Brassica_Orthology_Tool
+channels:
+  - bioconda
+  - anaconda
+dependencies:   
+  - pandas
+  - blast
+  - seqtk
+  - mafft
+  - raxml
+  - snakemake
