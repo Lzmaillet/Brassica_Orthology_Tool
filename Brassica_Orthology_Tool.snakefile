@@ -10,12 +10,12 @@ rule all:
         expand("fasta_pep/blast_q{proteomeX}_s{proteomeRef}_blastp.txt", proteomeRef=proteomesRef, proteomeX=proteomesX),
         expand("fasta_pep/blast_q{proteomeRef}_s{proteomeRef}_blastp.txt", proteomeRef=proteomesRef),
         expand("groupes_homologues_{proteomeRef}.txt", proteomeRef=proteomesRef),
-       # expand("tables/Tableau_recap_blast_q{proteomeRef}_s{proteomeX}_blast.tsv", proteomeRef=proteomesRef, proteomeX=proteomesX),
-       # expand("mock/concat_{proteomeRef}.mock", proteomeRef=proteomesRef),
-       # expand("mock/list_for_seqtk_{proteomeRef}.mock", proteomeRef=proteomesRef),
-       # expand("mock/seqtk_{proteomeRef}.mock", proteomeRef=proteomesRef),
-       # expand("mock/mafft_{proteomeRef}.mock", proteomeRef=proteomesRef),
-       # expand("mock/raxml_{proteomeRef}.mock", proteomeRef=proteomesRef)
+        expand("tables/Tableau_recap_blast_q{proteomeRef}_s{proteomeX}_blast.tsv", proteomeRef=proteomesRef, proteomeX=proteomesX),
+        expand("mock/concat_{proteomeRef}.mock", proteomeRef=proteomesRef),
+        expand("mock/list_for_seqtk_{proteomeRef}.mock", proteomeRef=proteomesRef),
+        expand("mock/seqtk_{proteomeRef}.mock", proteomeRef=proteomesRef),
+        expand("mock/mafft_{proteomeRef}.mock", proteomeRef=proteomesRef),
+        expand("mock/raxml_{proteomeRef}.mock", proteomeRef=proteomesRef)
         
 
 rule blastp_reci:
