@@ -1,5 +1,5 @@
 #! /bin/bash
 
-for f in ../fasta_pep/ref/*; do
-	touch ../mock/raxml_${f##*/}.mock
+for f in $1*; do
+	touch ./mock/raxml_${f##*/}.mock
 done

@@ -1,76 +1,87 @@
-proteomesX, = glob_wildcards("fasta_pep/query/{genome}")
-proteomesRef, = glob_wildcards("fasta_pep/ref/{genome}")
-genes_of_interest, = glob_wildcards("fasta_pep/genes_of_interest/{genes}")
+include: 'config.py'
+
+proteomeX=[]
+for x in config['QUERY']:
+    tmp = x.split('/')[-1]
+    proteomeX.append(tmp) 
+
+proteomeRef=[]
+for x in config['REF']:
+    tmp = x.split('/')[-1]
+    proteomeRef.append(tmp)
+    
+genes_of_interest = config['GENES_OF_INTEREST'].split('/')[-1]
+working_dir = config['WORKING_DIR']
+query_dir = config['QUERY_DIR']
+ref_dir = config['REF_DIR']
+blast_type = config['BLAST_TYPE']
+goi_dir = config['GOI_DIR']
 
 ruleorder: blastp_self > blastp_reci > selfblast_groupes_homologues > recup_genes_blast
      
 rule all:
     input:
-        expand("fasta_pep/blast_q{proteomeRef}_s{proteomeX}_blastp.txt", proteomeRef=proteomesRef, proteomeX=proteomesX),
-        expand("fasta_pep/blast_q{proteomeX}_s{proteomeRef}_blastp.txt", proteomeRef=proteomesRef, proteomeX=proteomesX),
-        expand("fasta_pep/blast_q{proteomeRef}_s{proteomeRef}_blastp.txt", proteomeRef=proteomesRef),
-        expand("groupes_homologues_{proteomeRef}.txt", proteomeRef=proteomesRef),
-        expand("tables/Tableau_recap_blast_q{proteomeRef}_s{proteomeX}_blast.tsv", proteomeRef=proteomesRef, proteomeX=proteomesX),
-        expand("mock/concat_{proteomeRef}.mock", proteomeRef=proteomesRef),
-        expand("mock/list_for_seqtk_{proteomeRef}.mock", proteomeRef=proteomesRef),
-        expand("mock/seqtk_{proteomeRef}.mock", proteomeRef=proteomesRef),
-        expand("mock/mafft_{proteomeRef}.mock", proteomeRef=proteomesRef),
-        expand("mock/raxml_{proteomeRef}.mock", proteomeRef=proteomesRef)
+        expand("blast/blast_q{proteomeRef}_s{proteomeX}_" + str(blast_type) + ".txt", proteomeRef=proteomeRef, proteomeX=proteomeX),
+        expand("blast/blast_q{proteomeX}_s{proteomeRef}_" + str(blast_type) + ".txt", proteomeRef=proteomeRef, proteomeX=proteomeX),
+        expand("blast/blast_q{proteomeRef}_s{proteomeRef}_" + str(blast_type) + ".txt", proteomeRef=proteomeRef),
+        expand("groupes_homologues_{proteomeRef}.txt", proteomeRef=proteomeRef),
+        expand("tables/Tableau_recap_blast_q{proteomeRef}_s{proteomeX}_blast.tsv", proteomeRef=proteomeRef, proteomeX=proteomeX),
+        expand("mock/concat_{proteomeRef}.mock", proteomeRef=proteomeRef),
+        expand("mock/list_for_seqtk_{proteomeRef}.mock", proteomeRef=proteomeRef),
+        expand("mock/seqtk_{proteomeRef}.mock", proteomeRef=proteomeRef),
+        expand("mock/mafft_{proteomeRef}.mock", proteomeRef=proteomeRef),
+        expand("mock/raxml_{proteomeRef}.mock", proteomeRef=proteomeRef)
         
 
 rule blastp_reci:
     input:
-        fastaX="fasta_pep/query/{proteomeX}",
-        fastaRef="fasta_pep/ref/{proteomeRef}"
+        fastaX=str(query_dir) + "{proteomeX}",
+        fastaRef=str(ref_dir) + "{proteomeRef}"
     output:
-        "fasta_pep/blast_q{proteomeRef}_s{proteomeX}_blastp.txt",
-        "fasta_pep/blast_q{proteomeX}_s{proteomeRef}_blastp.txt"
+        RefX = "blast/blast_q{proteomeRef}_s{proteomeX}_" + str(blast_type) + ".txt",
+        XRef = "blast/blast_q{proteomeX}_s{proteomeRef}_" + str(blast_type) + ".txt"
     params:
-        prefix1="fasta_pep/blast_q{proteomeX}_s{proteomeRef}_blastp.txt",
-        prefix2="fasta_pep/blast_q{proteomeRef}_s{proteomeX}_blastp.txt",
-        job_name="blasp_reci",
+        type = blast_type,
+        job_name="blast_reci",
         threads = 5,
         memory = 6144
-    conda:
-        "envs/blast"
     shell:
-        "blastp -query {input.fastaX} -subject {input.fastaRef} -evalue 1e-20 -outfmt '6 std qlen' -out '{params.prefix1}';"
-        "blastp -query {input.fastaRef} -subject {input.fastaX} -evalue 1e-20 -outfmt '6 std qlen' -out '{params.prefix2}';"
+        "{params.type} -query {input.fastaX} -subject {input.fastaRef} -evalue 1e-20 -outfmt '6 std qlen' -out '{output.XRef}';"
+        "{params.type} -query {input.fastaRef} -subject {input.fastaX} -evalue 1e-20 -outfmt '6 std qlen' -out '{output.RefX}';"
 
 rule blastp_self:
     input:
-        fastaRef="fasta_pep/ref/{proteomeRef}"
+        fastaRef=str(ref_dir) + "{proteomeRef}"
     output:
-        "fasta_pep/blast_q{proteomeRef}_s{proteomeRef}_blastp.txt"
+        "blast/blast_q{proteomeRef}_s{proteomeRef}_" + str(blast_type) + ".txt"
     params:
-        prefix="fasta_pep/blast_q{proteomeRef}_s{proteomeRef}_blastp.txt",
-        job_name="blasp_self",
+        prefix="blast/blast_q{proteomeRef}_s{proteomeRef}_" + str(blast_type) + ".txt",
+        job_name="blast_self",
         threads = 5,
         memory = 6144
-    conda:
-        "envs/blast"
     shell:
         "blastp -query {input.fastaRef} -subject {input.fastaRef} -evalue 1e-20 -outfmt '6 std qlen' -out '{params.prefix}';"
         
         
 rule selfblast_groupes_homologues:
     input:
-        selfblast="fasta_pep/blast_q{proteomeRef}_s{proteomeRef}_blastp.txt"
+        selfblast="blast/blast_q{proteomeRef}_s{proteomeRef}_" + str(blast_type) + ".txt"
     output:
         "groupes_homologues_{proteomeRef}.txt"
     params:
         prefix="groupes_homologues_{proteomeRef}.txt",
         gene_list=genes_of_interest,
+        goidir = goi_dir,
         job_name="selfblast_groupes_homologues",
         threads = 5,
         memory = 6144
     shell:
-        "python3.7 script_selfblast_homologroups_table.py  -s {input.selfblast} -n {params.prefix} -g fasta_pep/genes_of_interest/{params.gene_list} -i 80 -l 80"     
+        "python3.7 script_selfblast_homologroups_table.py  -s {input.selfblast} -n {params.prefix} -g {params.goidir}{params.gene_list} -i 80 -l 80"     
 
 rule recup_genes_blast:
     input:
-        blastRefX="fasta_pep/blast_q{proteomeRef}_s{proteomeX}_blastp.txt",
-        blastXRef="fasta_pep/blast_q{proteomeX}_s{proteomeRef}_blastp.txt"
+        blastRefX="blast/blast_q{proteomeRef}_s{proteomeX}_" + str(blast_type) + ".txt",
+        blastXRef="blast/blast_q{proteomeX}_s{proteomeRef}_" + str(blast_type) + ".txt"
     output:
         "tables/Tableau_recap_blast_q{proteomeRef}_s{proteomeX}_blast.tsv"
     params:
@@ -122,11 +133,13 @@ rule seqtk:
     output:
         temp("mock/seqtk_{proteomeRef}.mock")
     params:
+        qdir = "query_dir",
+        rdir = "ref_dir",
         job_name="seqtk",
         threads = 5,
         memory = 6144
     shell:
-        "bash cmd_automated_seqtk.sh;"
+        "bash cmd_automated_seqtk.sh {params.query_dir} {params.rdir};"
         "touch mock/seqtk_{wildcards.proteomeRef}.mock"
 
 rule mafft:
@@ -135,11 +148,12 @@ rule mafft:
     output:
         temp("mock/mafft_{proteomeRef}.mock")
     params:
+        rdir = "ref_dir",
         job_name="mafft",
-        threads = 5,
-        memory = 20480
+        threads = 1,
+        memory = 1000
     shell:
-        "bash cmd_mafft.sh;"
+        "bash cmd_mafft.sh {params.rdir};"
 
 rule raxml:
     input:
@@ -147,8 +161,9 @@ rule raxml:
     output:
         temp("mock/raxml_{proteomeRef}.mock")
     params:
+        rdir = "ref_dir",
         job_name="raxml",
-        threads = 5,
-        memory = 20480
+        threads = 1,
+        memory = 1000
     shell:
-        "bash cmd_raxml.sh;"
+        "bash cmd_raxml.sh {params.rdir};"
