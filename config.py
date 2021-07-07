@@ -11,6 +11,11 @@ config['WORKING_DIR'] = "/scratch/lomaillet/RLM/"
 config['GENES_OF_INTEREST'] = "/scratch/lomaillet/RLM/fasta_pep/genes_of_interest/Bnigra_C2.v1.B04_genes_of_interest.txt"
 # Ecrire entre guillemets le type de blast demande (blastn ou blastp)
 config['BLAST_TYPE'] = "blastp"
+# Ecrire un INT (nombre entier) pour seuil d'identite et de longueur
+config['SELFBLAST_IDENTITY_THRESHOLD'] = 60
+config['SELFBLAST_LENGTH_THRESHOLD'] = 60
+config['RECIPROCAL_BLAST_IDENTITY_THRESHOLD'] = 60
+config['RECIPROCAL_BLAST_LENGTH_THRESHOLD'] = 60
 
 
 

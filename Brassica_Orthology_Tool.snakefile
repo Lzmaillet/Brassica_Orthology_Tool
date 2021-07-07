@@ -16,6 +16,10 @@ query_dir = config['QUERY_DIR']
 ref_dir = config['REF_DIR']
 blast_type = config['BLAST_TYPE']
 goi_dir = config['GOI_DIR']
+selfblast_identity_threshold = config['SELFBLAST_IDENTITY_THRESHOLD']
+selfblast_length_threshold = config['SELFBLAST_LENGTH_THRESHOLD']
+reciprocal_blast_identity_threshold = config['RECIPROCAL_BLAST_IDENTITY_THRESHOLD']
+reciprocal_blast_length_threshold = config['RECIPROCAL_BLAST_LENGTH_THRESHOLD']
 
 ruleorder: blastp_self > blastp_reci > selfblast_groupes_homologues > recup_genes_blast
      
@@ -69,6 +73,8 @@ rule selfblast_groupes_homologues:
     output:
         "groupes_homologues_{proteomeRef}.txt"
     params:
+        ident = selfblast_identity_threshold,
+        length = selfblast_length_threshold,
         prefix="groupes_homologues_{proteomeRef}.txt",
         gene_list=genes_of_interest,
         goidir = goi_dir,
@@ -76,7 +82,7 @@ rule selfblast_groupes_homologues:
         threads = 5,
         memory = 6144
     shell:
-        "python3.7 script_selfblast_homologroups_table.py  -s {input.selfblast} -n {params.prefix} -g {params.goidir}{params.gene_list} -i 80 -l 80"     
+        "python3.7 script_selfblast_homologroups_table.py  -s {input.selfblast} -n {params.prefix} -g {params.goidir}{params.gene_list} -i {params.ident} -l {params.length}"     
 
 rule recup_genes_blast:
     input:
@@ -85,6 +91,8 @@ rule recup_genes_blast:
     output:
         "tables/Tableau_recap_blast_q{proteomeRef}_s{proteomeX}_blast.tsv"
     params:
+        ident = reciprocal_blast_identity_threshold,
+        length = reciprocal_blast_length_threshold,
         liste="groupes_homologues_{proteomeRef}.txt",
         out="Tableau_recap_blast_q{proteomeRef}_s{proteomeX}_blast.tsv",
         job_name="recup_genes_blast",
@@ -93,7 +101,7 @@ rule recup_genes_blast:
     shell:
         "mkdir -p tables/;"
         "cd tables/;"
-        "python3.7 ../script_recup_genes_blast_table.py -a ../{input.blastRefX} -b ../{input.blastXRef} -t ../{params.liste} -q {wildcards.proteomeX} -r {wildcards.proteomeRef} -i 60 -l 60 -n {params.out}"
+        "python3.7 ../script_recup_genes_blast_table.py -a ../{input.blastRefX} -b ../{input.blastXRef} -t ../{params.liste} -q {wildcards.proteomeX} -r {wildcards.proteomeRef} -i {params.ident} -l {params.length} -n {params.out}"
 
 rule concat_table:
     #input:
